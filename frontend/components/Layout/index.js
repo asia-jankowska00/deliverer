@@ -4,7 +4,7 @@ import Link from "next/link";
 
 import { Container, Nav, NavItem } from "reactstrap";
 
-export default function Layout(props) {
+function Layout(props) {
   const title = "Welcome to Nextjs";
   return (
     <div>
@@ -52,3 +52,5 @@ export default function Layout(props) {
     </div>
   );
 }
+
+export default Layout
