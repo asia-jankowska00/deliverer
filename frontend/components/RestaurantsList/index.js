@@ -1,5 +1,7 @@
 import { useQuery, gql } from '@apollo/client';
 import Link from "next/link";
+
+import ShoppingCart from "../ShoppingCart";
 import {
     Card,
     CardBody,

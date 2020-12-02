@@ -1,6 +1,8 @@
+import { useContext } from "react";
 import { useRouter } from "next/router";
 import { useQuery, gql } from '@apollo/client';
-
+import AppContext from "../context/AppContext";
+import ShoppingCart from "../components/ShoppingCart"
 import {
   Button,
   Card,
@@ -31,6 +33,7 @@ const GET_RESTAURANT_DISHES = gql`
 `;
 
 function Restaurants(props) {
+  const appContext = useContext(AppContext);
   const router = useRouter();
   const { loading, error, data } = useQuery(GET_RESTAURANT_DISHES, {
     variables: { id: router.query.id },
@@ -57,7 +60,7 @@ function Restaurants(props) {
                   <CardText>{res.description}</CardText>
                 </CardBody>
                 <div className="card-footer">
-                  <Button outline color="primary">
+                  <Button outline color="primary" onClick={() => appContext.addItem(res)}>
                     + Add To Cart
                   </Button>
 
@@ -85,6 +88,11 @@ function Restaurants(props) {
               </Card>
             </Col>
           ))}
+          <Col xs="3" style={{ padding: 0 }}>
+            <div>
+              <ShoppingCart />
+            </div>
+          </Col>
         </Row>
       </>
     );

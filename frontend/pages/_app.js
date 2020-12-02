@@ -6,10 +6,12 @@ import fetch from "isomorphic-fetch";
 import Layout from "../components/Layout/index";
 import AppContext from "../context/AppContext";
 import withApollo from '../lib/apollo'
+import * as _ from "lodash";
 
 class MyApp extends App {
   state = {
     user: null,
+    cart: { items: [], total: 0 },
   };
 
   componentDidMount() {
@@ -18,7 +20,7 @@ class MyApp extends App {
 
     if (token) {
       // authenticate the token on the server and place set user object
-      fetch(`${process.env.NEXT_PUBLIC_API_URL}users/me`, {
+      fetch(`${process.env.NEXT_PUBLIC_API_URL}/users/me`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -34,7 +36,91 @@ class MyApp extends App {
         this.setUser(user);
       });
     }
+
+    // restore cart from cookie, this could also be tracked in a db
+    const cart = Cookie.get("cart");
+    //if items in cart, set items and total from cookie
+    console.log(cart);
+
+    if (typeof cart === "string" && cart !== "undefined") {
+      console.log("foyd");
+      JSON.parse(cart).forEach((item) => {
+        this.setState({
+          cart: { items: JSON.parse(cart), total: item.price * item.quantity },
+        });
+      });
+    }   
   }
+
+  addItem = (item1) => {
+    let { items } = this.state.cart;
+    let item = _.cloneDeep(item1)
+    //check for item already in cart
+    //if not in cart, add item if item is found increase quanity ++
+    const newItem = items.find((i) => i.id === item.id);
+    // if item is not new, add to cart, set quantity to 1
+    if (!newItem) {
+      //set quantity property to 1
+      // let item = item;
+
+      console.log(item)
+      item.quantity = 1;
+      console.log(this.state.cart.total, item.price);
+      this.setState(
+        {
+          cart: {
+            items: [...items, item],
+            total: this.state.cart.total + item.price,
+          },
+        },
+        () => Cookie.set("cart", this.state.cart.items)
+      );
+    } else {
+      this.setState(
+        {
+          cart: {
+            items: this.state.cart.items.map((item) =>
+              item.id === newItem.id
+                ? Object.assign({}, item, { quantity: item.quantity + 1 })
+                : item
+            ),
+            total: this.state.cart.total + item.price,
+          },
+        },
+        () => Cookie.set("cart", this.state.cart.items)
+      );
+    }
+  };
+  removeItem = (item) => {
+    let { items } = this.state.cart;
+    //check for item already in cart
+    //if not in cart, add item if item is found increase quanity ++
+    const newItem = items.find((i) => i.id === item.id);
+    if (newItem.quantity > 1) {
+      this.setState(
+        {
+          cart: {
+            items: this.state.cart.items.map((item) =>
+              item.id === newItem.id
+                ? Object.assign({}, item, { quantity: item.quantity - 1 })
+                : item
+            ),
+            total: this.state.cart.total - item.price,
+          },
+        },
+        () => Cookie.set("cart", this.state.items)
+      );
+    } else {
+      const items = [...this.state.cart.items];
+      const index = items.findIndex((i) => i.id === newItem.id);
+
+      items.splice(index, 1);
+      this.setState(
+        { cart: { items: items, total: this.state.cart.total - item.price } },
+        () => Cookie.set("cart", this.state.items)
+      );
+    }
+  };
 
   setUser = (user) => {
     this.setState({ user });
@@ -48,6 +134,9 @@ class MyApp extends App {
           user: this.state.user,
           isAuthenticated: !!this.state.user,
           setUser: this.setUser,
+          cart: this.state.cart,
+          addItem: this.addItem,
+          removeItem: this.removeItem,
         }}
       >
         <Head>
